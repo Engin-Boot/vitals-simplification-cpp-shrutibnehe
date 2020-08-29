@@ -1,46 +1,65 @@
-#include <assert.h>
-#include<iostream>
+#include <iostream>
 using namespace std;
-const int bpmrange[]={70,150};
+const int bpmrange[]={90,150};
 const int spo2range[]={90,100};
-const int resprange[]={30,95};
-bool checklimit(float value,int min,int max)
+const int respRaterange[]={30,95};
+class Alert
 {
-    return(value>=min &&value<=max);
-}
-bool bpmisok(float bpm)
+  public:
+     virtual void raisealert(const char*, const char*) = 0;
+};
+class SMSAlert: public Alert
 {
-    if(checklimit(bpm,bpmrange[0],bpmrange[1])) 
-    return true;
-    else
-    cout<<"BPM check up needed"<<endl;
-    return false;
-}
-bool spo2isok(float spo2)
+public:
+	void raisealert(const char* vitalname,const char* msg) override
+	{
+     cout<<"SMS Alert  "<<vitalname<<" is "<<msg<<endl;
+	}
+};
+class SoundAlert:public Alert
 {
-    if(checklimit(spo2,spo2range[0],spo2range[1])) 
-        return true;
-    else
-         cout<<"SPO2 check up needed"<<endl;
-         return false;
-}
-bool respisok(float resp)
+public:
+	void raisealert(const char* vitalname,const char*msg) override
+		{
+		cout<<"Sound Alert "<<vitalname<<" is "<<msg<<endl;
+		}
+        };
+class vitals
 {
-  if(checklimit(resp,resprange[0],resprange[1])) 
-        return true;
-    else    
-    cout<<"Respiratory check up needed"<<endl;
-    return false;
+public:
+	const char* checklimit(int vitalValue, int lowerLimit, int upperLimit)
+	{
+	      if(vitalValue < lowerLimit)
+	        return "LOW";
+	      if(vitalValue > upperLimit)
+	        return "HIGH";
+	      return "Within Range";
 }
-bool vitalsAreOk(float bpm, float spo2, float respRate) {
-  return (bpmisok(bpm) && spo2isok(spo2) && respisok(respRate));
- }
+	void vitalsAreOk(float bpm, float spo2, float respRate) {
+	      const char* bpmmsg = checklimit(bpm, bpmrange[0],bpmrange[1] );
+	      const char* spo2msg = checklimit(spo2, spo2range[0],spo2range[1] );
+	      const char* respRatemsg = checklimit(respRate, respRaterange[0],respRaterange[1] );
+
+	      Alert* alert;
+	      SMSAlert alertSMS;
+	      SoundAlert alertSound;
+
+	      alert = &alertSMS;
+	      alert->raisealert("BPM", bpmmsg);
+	      alert->raisealert("SPO2", spo2msg);
+	      alert->raisealert("Respiratory Rate", respRatemsg);
+
+	      alert = &alertSound;
+	      alert->raisealert("BPM", bpmmsg);
+	      alert->raisealert("SPO2", spo2msg);
+	      alert->raisealert("Respiratory Rate", respRatemsg);
+	    }
+};
 int main() {
-  assert(checklimit(54,10,100)==true);
-  assert(checklimit(50,10,40)==false);
-  assert(vitalsAreOk(80, 95, 60) == true);
-  assert(vitalsAreOk(80, 95, 40) == true);
-  assert(vitalsAreOk(160, 90, 40) == false);
-  assert(vitalsAreOk(90, 80, 40) == false);
-  assert(vitalsAreOk(90, 90, 20) == false);
+	vitals checkvitals;
+	  checkvitals.vitalsAreOk(95, 95, 60);
+	  checkvitals.vitalsAreOk(80, 110, 20);
+	  checkvitals.vitalsAreOk(80, 98, 45);
+	  checkvitals.vitalsAreOk(100, 80, 40);
+	  checkvitals.vitalsAreOk(90, 95, 100);
 }
